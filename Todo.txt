@@ -1,0 +1,2 @@
+let MSRP also have a TBA function, and work with all other filters/sorts.
+MSRP should have something there to remind the end user that all MSRP prices are in USD. Display $(MSRP) along with the price if they don't put the $ sign.
