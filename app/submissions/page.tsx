@@ -5,8 +5,8 @@ import Link from "next/link";
 import Script from "next/script";
 import type { ProductCategory } from "@/lib/types";
 
-const categories: ProductCategory[] = ["IEMs", "Headphones", "Sources", "Accessories", "Other"];
-const MAX_IMAGE_BYTES = 500_000;
+const categories: ProductCategory[] = ["IEMs", "Flatheads", "Headphones", "Sources", "Accessories", "Other"];
+const MAX_IMAGE_BYTES = 300_000;
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
 export default function SubmissionsPage() {
@@ -19,6 +19,7 @@ export default function SubmissionsPage() {
     description: "",
     releaseDate: "",
   });
+  const [msrpIsTba, setMsrpIsTba] = useState(false);
   const [imageDataUrl, setImageDataUrl] = useState<string>("");
   const [imageName, setImageName] = useState<string>("");
   const [status, setStatus] = useState<string | null>(null);
@@ -97,7 +98,7 @@ export default function SubmissionsPage() {
 
       const decodedSize = Math.round((dataUrl.length * 3) / 4);
       if (decodedSize > MAX_IMAGE_BYTES) {
-        setError("Unable to resize the image under 500 KB. Please choose a smaller file.");
+        setError("Unable to resize the image under 300 KB. Please choose a smaller file.");
         return;
       }
 
@@ -125,13 +126,20 @@ export default function SubmissionsPage() {
 
     const grecaptcha = (window as any).grecaptcha;
     if (!grecaptcha || !captchaLoaded) {
-      setError("Captcha is not ready yet. Please wait a moment and try again.");
+      setError("Captcha is not ready yet. Please wait a moment and try again. You might have to refresh this page.");
       return;
     }
 
     if (!form.name.trim() || !form.brand.trim() || !form.source.trim()) {
       setError("Please fill in product name, brand, and source link.");
       return;
+    }
+
+    if (!msrpIsTba && form.msrp.trim()) {
+      if (!/^\d+$/.test(form.msrp.trim())) {
+        setError("MSRP must be a whole number (no decimals or symbols). Example: 99 or 1299");
+        return;
+      }
     }
 
     if (form.releaseDate && Number.isNaN(Date.parse(form.releaseDate))) {
@@ -164,6 +172,7 @@ export default function SubmissionsPage() {
 
       setStatus("Your submission was received and is now pending review.");
       setForm({ name: "", brand: "", category: "IEMs", msrp: "", source: "", description: "", releaseDate: "" });
+      setMsrpIsTba(false);
       clearImage();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to submit product.");
@@ -206,7 +215,7 @@ export default function SubmissionsPage() {
                   value={form.name}
                   onChange={(event) => handleChange("name", event.target.value)}
                   className="mt-2 w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-blue-400"
-                  placeholder="Example: Nova IEM"
+                  placeholder="Don't include brand name. Example: Nova"
                 />
               </label>
               <label className="block">
@@ -215,7 +224,7 @@ export default function SubmissionsPage() {
                   value={form.brand}
                   onChange={(event) => handleChange("brand", event.target.value)}
                   className="mt-2 w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-blue-400"
-                  placeholder="Example: AudioProphet"
+                  placeholder="Example: Truthear"
                 />
               </label>
             </div>
@@ -236,14 +245,19 @@ export default function SubmissionsPage() {
                 </select>
               </label>
               <label className="block">
-                <span className="text-sm font-medium text-zinc-200">MSRP</span>
+                <span className="text-sm font-medium text-zinc-200">MSRP (USD)</span>
                 <input
+                  type="text"
                   value={form.msrp}
-                  onChange={(event) => handleChange("msrp", event.target.value)}
-                  className="mt-2 w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-blue-400"
-                  placeholder="$999 / 999€"
+                  onChange={(event) => {
+                    const val = event.target.value.replace(/[^0-9]/g, "");
+                    handleChange("msrp", val);
+                  }}
+                  disabled={msrpIsTba}
+                  className="mt-2 w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-blue-400 disabled:opacity-50"
+                  placeholder="e.g., 999 (whole numbers only)"
                 />
-                <p className="mt-2 text-xs text-zinc-500">MSRP values are shown in USD. If you omit the $ sign, we'll display the price as $X.</p>
+                <p className="mt-2 text-xs text-zinc-500">Enter whole numbers only (e.g., 99, 1299). No decimals or symbols.</p>
               </label>
             </div>
 
@@ -259,6 +273,23 @@ export default function SubmissionsPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block">
+                <div className="flex items-center gap-3">
+                  <div>
+                    <span className="text-sm font-medium text-zinc-200">MSRP is TBA</span>
+                    <p className="mt-1 text-xs text-zinc-500">Check if price not yet announced</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={msrpIsTba}
+                    onChange={(event) => {
+                      setMsrpIsTba(event.target.checked);
+                      if (event.target.checked) handleChange("msrp", "");
+                    }}
+                    className="h-5 w-5 rounded border-white/10 bg-zinc-950 text-blue-500"
+                  />
+                </div>
+              </label>
+              <label className="block">
                 <span className="text-sm font-medium text-zinc-200">Release date</span>
                 <input
                   type="date"
@@ -272,17 +303,19 @@ export default function SubmissionsPage() {
                 <span className="text-sm font-medium text-zinc-200">Notes</span>
                 <textarea
                   value={form.description}
+                  maxLength={300}
                   onChange={(event) => handleChange("description", event.target.value)}
                   className="mt-2 min-h-[120px] w-full rounded-3xl border border-white/10 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-blue-400"
                   placeholder="Optional release window, rumor source, or special details."
                 />
+                <p className="mt-2 text-xs text-zinc-500">Character limit: {form.description.length}/300</p>
               </label>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block">
                 <span className="text-sm font-medium text-zinc-200">Product image</span>
-                <input
+                <input   
                   type="file"
                   accept="image/*"
                   onChange={handleFileChange}

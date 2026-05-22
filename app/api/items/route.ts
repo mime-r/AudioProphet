@@ -34,9 +34,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid release date." }, { status: 400 });
   }
 
-  const allowedCategories: ProductCategory[] = ["IEMs", "Headphones", "Sources", "Accessories", "Other"];
+  const allowedCategories: ProductCategory[] = ["IEMs", "Flatheads", "TWS", "Headphones", "Sources", "Accessories", "Other"];
   if (!allowedCategories.includes(category)) {
     return NextResponse.json({ error: "Invalid category." }, { status: 400 });
+  }
+
+  const descriptionString = String(description || "").trim();
+  if (descriptionString.length > 300) {
+    return NextResponse.json({ error: "Description must be 300 characters or less." }, { status: 400 });
   }
 
   const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY;

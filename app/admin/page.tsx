@@ -24,6 +24,7 @@ export default function AdminPage() {
     description: "",
     releaseDate: "",
   });
+  const [editMsrpIsTba, setEditMsrpIsTba] = useState(false);
   const [editImageDataUrl, setEditImageDataUrl] = useState<string | null>(null);
   const [editImageName, setEditImageName] = useState<string>("");
   const [statusFilters, setStatusFilters] = useState<Record<string, boolean>>({
@@ -36,6 +37,7 @@ export default function AdminPage() {
   const [brandFilter, setBrandFilter] = useState("");
   const [releaseDateFilter, setReleaseDateFilter] = useState("");
   const [showTba, setShowTba] = useState(true);
+  const [showOnlyTba, setShowOnlyTba] = useState(false);
   const [sortOption, setSortOption] = useState<"newest" | "oldest" | "name-asc" | "name-desc" | "price-asc" | "price-desc">("newest");
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -82,6 +84,7 @@ export default function AdminPage() {
       description: item.description || "",
       releaseDate: item.releaseDate || "",
     });
+    setEditMsrpIsTba(!item.msrp);
     setEditImageDataUrl(item.imageDataUrl || null);
     setEditImageName("");
     setError(null);
@@ -91,6 +94,7 @@ export default function AdminPage() {
   const cancelEdit = () => {
     setEditingId(null);
     setEditForm({ name: "", brand: "", category: "", msrp: "", source: "", description: "", releaseDate: "" });
+    setEditMsrpIsTba(false);
     setEditImageDataUrl(null);
     setEditImageName("");
   };
@@ -253,6 +257,7 @@ export default function AdminPage() {
     return items
       .filter((item) => statusFilters[item.status] ?? false)
       .filter((item) => {
+        if (showOnlyTba && item.releaseDate) return false;
         if (normalizedSearch && !item.name.toLowerCase().includes(normalizedSearch)) {
           return false;
         }
@@ -313,7 +318,7 @@ export default function AdminPage() {
         }
         return aDate.localeCompare(bDate);
       });
-  }, [items, statusFilters, searchQuery, brandFilter, releaseDateFilter, showTba, sortOption]);
+  }, [items, statusFilters, searchQuery, brandFilter, releaseDateFilter, showTba, showOnlyTba, sortOption]);
 
   const logout = () => {
     window.sessionStorage.removeItem("adminAuth");
@@ -346,8 +351,8 @@ export default function AdminPage() {
         </div>
 
         <section className="mb-8 rounded-3xl border border-white/10 bg-zinc-900/80 p-8 ring-1 ring-white/5">
-          <h2 className="text-2xl font-semibold text-white">Admin login</h2>
-          <p className="mt-2 text-sm text-zinc-400">Use your admin username and password. By default, the app uses admin/password unless you set environment variables.</p>
+          <h2 className="text-2xl font-semibold text-white">Admin Login</h2>
+          <p className="mt-2 text-sm text-zinc-400"></p> {/* For further instructions or info */}
 
           {!signedIn ? (
             <form className="mt-6 grid gap-4 sm:grid-cols-2" onSubmit={handleLogin}>
@@ -357,17 +362,17 @@ export default function AdminPage() {
                   value={user}
                   onChange={(event) => setUser(event.target.value)}
                   className="mt-2 w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-blue-400"
-                  placeholder="admin"
+                  placeholder="Username"
                 />
               </label>
               <label className="block">
                 <span className="text-sm font-medium text-zinc-200">Password</span>
                 <input
-                  type="password"
+                  type="Password"
                   value={pass}
                   onChange={(event) => setPass(event.target.value)}
                   className="mt-2 w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-blue-400"
-                  placeholder="password"
+                  placeholder="Password"
                 />
               </label>
               <div className="sm:col-span-2 flex flex-wrap gap-3">
@@ -469,7 +474,7 @@ export default function AdminPage() {
                   </select>
                 </label>
           </div>
-          <div className="mt-3 flex items-center gap-2 text-sm text-zinc-300">
+          <div className="mt-3 flex items-center gap-4 text-sm text-zinc-300">
             <label className="inline-flex items-center gap-2">
               <input
                 type="checkbox"
@@ -478,6 +483,15 @@ export default function AdminPage() {
                 className="h-4 w-4 rounded border-white/10 bg-zinc-950 text-blue-500"
               />
               Include TBA
+            </label>
+            <label className="inline-flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={showOnlyTba}
+                onChange={(event) => setShowOnlyTba(event.target.checked)}
+                className="h-4 w-4 rounded border-white/10 bg-zinc-950 text-blue-500"
+              />
+              Only TBA
             </label>
           </div>
 
@@ -491,15 +505,17 @@ export default function AdminPage() {
                 <article key={item.id} className="rounded-3xl border border-white/10 bg-zinc-950/80 p-6">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
+                      
                       <p className="text-sm uppercase tracking-[0.24em] text-zinc-400">{item.category}</p>
-                      <h3 className="mt-3 text-2xl font-semibold text-white">{item.name}</h3>
-                        <p className="mt-2 text-sm text-zinc-400">{item.brand} · MSRP {formatMsrp(item.msrp)}</p>
+                    <h2 className="mt-3 text-2xl font-semibold text-white">{item.brand} {item.name}</h2>
+                    <p className="mt-2 text-sm text-zinc-400">MSRP {formatMsrp(item.msrp)}</p>
                     </div>
                     <span className="inline-flex rounded-full bg-blue-100 px-4 py-2 text-xs font-semibold text-blue-800">
                       {item.status}
                     </span>
                   </div>
-                  {item.description ? <p className="mt-4 text-sm leading-7 text-zinc-300">{item.description}</p> : null}
+                  {item.description ? <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-zinc-300">{item.description}</p> : null}
+                  <br />
                   {item.imageDataUrl ? (
                     <button
                       type="button"
@@ -596,11 +612,34 @@ export default function AdminPage() {
                         <label className="block">
                           <span className="text-sm font-medium text-zinc-200">MSRP</span>
                           <input
+                            type="text"
                             value={editForm.msrp}
-                            onChange={(event) => handleEditChange("msrp", event.target.value)}
-                            className="mt-2 w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-blue-400"
+                            onChange={(event) => {
+                              const val = event.target.value.replace(/[^0-9]/g, "");
+                              handleEditChange("msrp", val);
+                            }}
+                            disabled={editMsrpIsTba}
+                            className="mt-2 w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-blue-400 disabled:opacity-50"
+                            placeholder="e.g., 999 (whole numbers only)"
                           />
-                          <p className="mt-2 text-xs text-zinc-500">MSRP values are shown in USD. If you omit the $ sign, we'll display the price as $X.</p>
+                          <p className="mt-2 text-xs text-zinc-500">Enter whole numbers only (e.g., 99, 1299). No decimals or symbols.</p>
+                        </label>
+                        <label className="flex items-center gap-3">
+                          <div>
+                            <span className="text-sm font-medium text-zinc-200">MSRP is TBA</span>
+                            <p className="mt-1 text-xs text-zinc-500">Check if price not yet announced</p>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={editMsrpIsTba}
+                            onChange={(event) => {
+                              setEditMsrpIsTba(event.target.checked);
+                              if (event.target.checked) {
+                                handleEditChange("msrp", "");
+                              }
+                            }}
+                            className="h-5 w-5 rounded border-white/10 bg-zinc-950 text-blue-500"
+                          />
                         </label>
                       </div>
                       <label className="mt-4 block">
@@ -625,9 +664,11 @@ export default function AdminPage() {
                         <span className="text-sm font-medium text-zinc-200">Notes</span>
                         <textarea
                           value={editForm.description}
+                          maxLength={300}
                           onChange={(event) => handleEditChange("description", event.target.value)}
                           className="mt-2 min-h-[120px] w-full rounded-3xl border border-white/10 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-blue-400"
                         />
+                        <p className="mt-2 text-xs text-zinc-500">Character limit: {editForm.description.length}/300</p>
                       </label>
                       <label className="mt-4 block">
                         <span className="text-sm font-medium text-zinc-200">Replace image</span>

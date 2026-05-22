@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { ProductCategory, ProductItem } from "@/lib/types";
 
-const categories: ProductCategory[] = ["IEMs", "Headphones", "Sources", "Accessories", "Other"];
+const categories: ProductCategory[] = ["IEMs", "Flatheads", "Headphones", "Sources", "Accessories", "Other"];
+const SUPPORT_URL = "https://discord.gg/wG4RgWQNUu";
 
 function getStatusLabel(status: string) {
   if (status === "Released") return "Released";
@@ -27,6 +28,8 @@ export default function Home() {
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [filters, setFilters] = useState<Record<ProductCategory, boolean>>({
     IEMs: true,
+    Flatheads: true,
+    TWS: true,
     Headphones: true,
     Sources: true,
     Accessories: true,
@@ -36,6 +39,7 @@ export default function Home() {
   const [brandFilter, setBrandFilter] = useState("");
   const [releaseDateFilter, setReleaseDateFilter] = useState("");
   const [showTba, setShowTba] = useState(true);
+  const [showOnlyTba, setShowOnlyTba] = useState(false);
   const [sortOption, setSortOption] = useState<"newest" | "oldest" | "name-asc" | "name-desc" | "price-asc" | "price-desc">("newest");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -72,6 +76,7 @@ export default function Home() {
     return products
       .filter((item) => filters[item.category])
       .filter((item) => {
+        if (showOnlyTba && item.releaseDate) return false;
         if (normalizedSearch && !item.name.toLowerCase().includes(normalizedSearch)) {
           return false;
         }
@@ -129,7 +134,7 @@ export default function Home() {
         }
         return aDate.localeCompare(bDate);
       });
-  }, [filters, products, searchQuery, brandFilter, releaseDateFilter, showTba, sortOption]);
+  }, [filters, products, searchQuery, brandFilter, releaseDateFilter, showTba, showOnlyTba, sortOption]);
 
   const toggleCategory = (category: ProductCategory) => {
     setFilters((current) => ({ ...current, [category]: !current[category] }));
@@ -143,11 +148,11 @@ export default function Home() {
   };
 
   const selectAll = () => {
-    setFilters({ IEMs: true, Headphones: true, Sources: true, Accessories: true, Other: true });
+    setFilters({ IEMs: true, Flatheads: true, TWS: true, Headphones: true, Sources: true, Accessories: true, Other: true });
   };
 
   const clearAll = () => {
-    setFilters({ IEMs: false, Headphones: false, Sources: false, Accessories: false, Other: false });
+    setFilters({ IEMs: false, Flatheads: false, TWS: false, Headphones: false, Sources: false, Accessories: false, Other: false });
   };
 
   return (
@@ -158,16 +163,17 @@ export default function Home() {
             <p className="text-sm uppercase tracking-[0.3em] text-zinc-400">Audio Prophet</p>
             <h1 className="mt-4 text-4xl font-semibold text-white sm:text-5xl">Upcoming audio products</h1>
             <p className="mt-4 max-w-2xl text-lg leading-8 text-zinc-300">
-              Browse verified and released submissions. Filter out categories you don’t want to see, or add new products on the contributor page.
+              Browse verified and released submissions. Filter out categories you don’t want to see, or add new products on the contributor page. <br /><br />
+              Made with 💖 by Sam Reviews
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
             <Link href="/submissions" className="inline-flex items-center justify-center rounded-3xl bg-blue-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-400">
-              Submit a product
+              Submit a Product
             </Link>
-            <Link href="/admin" className="inline-flex items-center justify-center rounded-3xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
-              Admin panel
-            </Link>
+            <a href={SUPPORT_URL} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center rounded-3xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
+              Report Issue or Request Feature
+            </a>
           </div>
         </header>
 
@@ -243,7 +249,7 @@ export default function Home() {
               </select>
             </label>
           </div>
-          <div className="mt-3 flex items-center gap-2 text-sm text-zinc-300">
+          <div className="mt-3 flex items-center gap-4 text-sm text-zinc-300">
             <label className="inline-flex items-center gap-2">
               <input
                 type="checkbox"
@@ -251,7 +257,16 @@ export default function Home() {
                 onChange={(event) => setShowTba(event.target.checked)}
                 className="h-4 w-4 rounded border-white/10 bg-zinc-950 text-blue-500"
               />
-              Include TBA
+              Include TBA (Release Date)
+            </label>
+            <label className="inline-flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={showOnlyTba}
+                onChange={(event) => setShowOnlyTba(event.target.checked)}
+                className="h-4 w-4 rounded border-white/10 bg-zinc-950 text-blue-500"
+              />
+              Only TBA (Release Date)
             </label>
           </div>
         </section>
@@ -292,14 +307,15 @@ export default function Home() {
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <p className="text-sm uppercase tracking-[0.24em] text-zinc-400">{item.category}</p>
-                    <h2 className="mt-3 text-2xl font-semibold text-white">{item.name}</h2>
-                    <p className="mt-2 text-sm text-zinc-400">{item.brand} · MSRP {formatMsrp(item.msrp)}</p>
+                    <h2 className="mt-3 text-2xl font-semibold text-white">{item.brand} {item.name}</h2>
+                    <p className="mt-2 text-sm text-zinc-400">MSRP {formatMsrp(item.msrp)}</p>
                   </div>
                   <span className={`inline-flex rounded-full px-4 py-2 text-xs font-semibold ${statusStyles(item.status)}`}>
                     {getStatusLabel(item.status)}
                   </span>
                 </div>
-                {item.description ? <p className="mt-4 text-sm leading-7 text-zinc-300">{item.description}</p> : null}
+                {item.description ? <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-zinc-300">{item.description}</p> : null}
+                
                 <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-zinc-400">
                   <span>Release date: {item.releaseDate || "TBA"}</span>
                 </div>

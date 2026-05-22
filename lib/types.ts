@@ -1,4 +1,4 @@
-export type ProductCategory = "IEMs" | "Headphones" | "Sources" | "Accessories" | "Other";
+export type ProductCategory = "IEMs" | "Flatheads" | "TWS" | "Headphones" | "Sources" | "Accessories" | "Other";
 export type ProductStatus = "Pending" | "Verified" | "Released" | "Rejected";
 
 export interface ProductItem {

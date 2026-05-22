@@ -1,2 +1,5 @@
-let MSRP also have a TBA function, and work with all other filters/sorts.
-MSRP should have something there to remind the end user that all MSRP prices are in USD. Display $(MSRP) along with the price if they don't put the $ sign.
+1. add category 'TWS'
+2. add a character limit to item description to 300.
+3. item description display doesn't show as multi-line even though when I go into the editing page it is multiple-lined
+4. the previous change to MSRP, i.e. "for MSRP entering in submissions page, only allow numbers, without symbols like $. The field can only accept whole numbers. do not allow submission if price entered is like 55.99, and remind user to round up to the nearest whole number. Add a way for MSRP entering as TBA to be indicated." needs to be applied to the admin edit page as well. It's still showing the same thing as before.
+5. always display item title in both admin and main page as '{Brand} {Name}', so users don't include name under product name in the submissions page. for example they only enter in 'Nova' for the name, then the brand enter in 'Truthear', when it finally appeasr it should appear as 'Truthear Nova'

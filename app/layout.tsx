@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
+
+<Analytics/>
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,8 +17,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Audio Prophet",
+  icon: "/favicon.ico",
   description: "",
 };
+
 
 export default function RootLayout({
   children,
