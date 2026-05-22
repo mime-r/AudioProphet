@@ -17,7 +17,6 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Audio Prophet",
-  icon: "/favicon.ico",
   description: "",
 };
 
