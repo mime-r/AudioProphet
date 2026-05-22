@@ -6,7 +6,7 @@ import Script from "next/script";
 import type { ProductCategory } from "@/lib/types";
 
 const categories: ProductCategory[] = ["IEMs", "Headphones", "Sources", "Accessories", "Other"];
-const MAX_IMAGE_BYTES = 1_000_000;
+const MAX_IMAGE_BYTES = 500_000;
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
 export default function SubmissionsPage() {
@@ -97,7 +97,7 @@ export default function SubmissionsPage() {
 
       const decodedSize = Math.round((dataUrl.length * 3) / 4);
       if (decodedSize > MAX_IMAGE_BYTES) {
-        setError("Unable to resize the image under 1 MB. Please choose a smaller file.");
+        setError("Unable to resize the image under 500 KB. Please choose a smaller file.");
         return;
       }
 
@@ -150,8 +150,15 @@ export default function SubmissionsPage() {
       });
 
       if (!response.ok) {
-        const json = await response.json();
-        setError(json?.error || "Unable to submit product.");
+        let errorMessage = "Unable to submit product.";
+        try {
+          const json = await response.json();
+          errorMessage = json?.error || errorMessage;
+        } catch {
+          const text = await response.text();
+          if (text) errorMessage = text;
+        }
+        setError(errorMessage);
         return;
       }
 

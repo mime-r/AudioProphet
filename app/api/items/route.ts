@@ -21,12 +21,13 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const body = await request.json();
-  const { name, brand, category, msrp, source, description, imageDataUrl, releaseDate, captchaToken } = body;
+  try {
+    const body = await request.json();
+    const { name, brand, category, msrp, source, description, imageDataUrl, releaseDate, captchaToken } = body;
 
-  if (!name || !brand || !source || !category || !captchaToken) {
-    return NextResponse.json({ error: "Missing required fields or captcha token." }, { status: 400 });
-  }
+    if (!name || !brand || !source || !category || !captchaToken) {
+      return NextResponse.json({ error: "Missing required fields or captcha token." }, { status: 400 });
+    }
 
   const parsedReleaseDate = releaseDate ? String(releaseDate).trim() : "";
   if (parsedReleaseDate && Number.isNaN(Date.parse(parsedReleaseDate))) {
@@ -53,7 +54,17 @@ export async function POST(request: Request) {
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: `secret=${encodeURIComponent(recaptchaSecret)}&response=${encodeURIComponent(captchaToken)}&remoteip=${encodeURIComponent(ip)}`,
   });
-  const verification = await verifyResponse.json();
+
+  if (!verifyResponse.ok) {
+    return NextResponse.json({ error: "Captcha verification service returned an error." }, { status: 500 });
+  }
+
+  let verification;
+  try {
+    verification = await verifyResponse.json();
+  } catch {
+    return NextResponse.json({ error: "Captcha verification returned invalid response." }, { status: 500 });
+  }
 
   if (!verification.success || (typeof verification.score === "number" && verification.score < 0.4)) {
     return NextResponse.json({ error: "Captcha validation failed." }, { status: 400 });
@@ -90,4 +101,8 @@ export async function POST(request: Request) {
 
   const saved = await addProduct(newSubmission);
   return NextResponse.json(saved, { status: 201 });
+  } catch (error) {
+    console.error("POST /api/items error:", error);
+    return NextResponse.json({ error: "Internal server error." }, { status: 500 });
+  }
 }
