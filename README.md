@@ -1,4 +1,4 @@
-## AudioProphet, the future of audiophile product releases at a glance.
+## AudioProphet, the future of audiophile product releases.
 
 Community-contributed content management system (CMS) for intelligent presentation of a catalogue of upcoming (yet-to-be-released) audiophile products.
 
