@@ -14,7 +14,7 @@ A community-driven CMS that aggregates, AI-extracts, and showcases upcoming (yet
 [![OpenAI](https://img.shields.io/badge/AI-OpenAI%20%7C%20LM%20Studio-412991)](#scraper-agent)
 
 
-![Main UI Screenshot 1](public/main_UI_screenshot_1.png)
+![Main UI Screenshot 1](public/main_UI_screenshot_2.png)
 
 ---
 
