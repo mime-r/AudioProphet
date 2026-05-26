@@ -28,10 +28,10 @@ The `scraper-agent/` is a standalone Node.js/TypeScript application that **autom
 
 ### How AI is used
 
-1. **Scrape** — Playwright scrapes posts from Head-Fi forums, Twitter/X profiles, and general web sources.
-2. **Analyze** — Each post is sent to an LLM (OpenAI or local LM Studio) with a system prompt that instructs it to detect product announcements and extract: product name, brand, category, MSRP, release date, and confidence score.
-3. **Enrich** — Approved entries are enriched with Google Image search results.
-4. **Review** — A built-in Express web UI lets you browse, edit, approve, and submit scraped products to the main app.
+1. **Scrape** - Playwright scrapes posts from Head-Fi forums, Twitter/X profiles, and general web sources.
+2. **Analyze** - Each post is sent to an LLM (OpenAI or local LM Studio) with a system prompt that instructs it to detect product announcements and extract: product name, brand, category, MSRP, release date, and confidence score.
+3. **Enrich** - Approved entries are enriched with Google Image search results.
+4. **Review** - A built-in Express web UI lets you browse, edit, approve, and submit scraped products to the main app.
 
 **Supported AI providers:**
 | Provider | Model Config |
