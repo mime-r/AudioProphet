@@ -1,3 +1,4 @@
+![AudioProphet Icon](public/audioprophet-candidate.png)
 # AudioProphet
 
 **The future of audiophile product discovery.**
@@ -47,7 +48,8 @@ Sources ──► Scrapers ──► AI Analysis ──► Validation ──► 
  Twitter/X,    Cheerio)       LM Studio)        confidence)    web app)
  web)
 ```
-
+![Screenshot 1](public/scraper_screenshot_1.png)
+![Screenshot 2](public/scraper_screenshot_2.png)
 ---
 
 ## Tech Stack
