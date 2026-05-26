@@ -16,6 +16,122 @@ function extractPageNumber(url: string): number {
   return match ? parseInt(match[1], 10) : 1;
 }
 
+function normalizeHeadFiUrl(url: string, baseUrl: string): string {
+  if (!url) {
+    return "";
+  }
+
+  if (url.startsWith("http")) {
+    return url;
+  }
+
+  try {
+    return new URL(url, baseUrl).toString();
+  } catch {
+    return url;
+  }
+}
+
+function isThreadLink(href: string): boolean {
+  if (!href || href.includes("/post-") || href.includes("/activity/") || href.includes("/page-") || href.includes("/latest")) {
+    return false;
+  }
+
+  return /^\/threads\/[^/]+(?:\.\d+)?\/?$/.test(href);
+}
+
+function extractThreadLinksFromHtml(html: string, baseUrl: string): string[] {
+  const $ = cheerio.load(html);
+  const links: string[] = [];
+
+  $('a[href*="/threads/"]').each((_i, el) => {
+    const href = $(el).attr("href");
+    if (!href) {
+      return;
+    }
+
+    const fullUrl = normalizeHeadFiUrl(href, baseUrl);
+    if (!fullUrl || !isThreadLink(new URL(fullUrl).pathname)) {
+      return;
+    }
+
+    if (!links.includes(fullUrl)) {
+      links.push(fullUrl);
+    }
+  });
+
+  return links;
+}
+
+function extractNestedForumLinks(html: string, baseUrl: string): string[] {
+  const $ = cheerio.load(html);
+  const links: string[] = [];
+
+  $('div.node--depth2.node--forum').each((_i, el) => {
+    const href = $(el).find('h3.node-title a').first().attr("href");
+    if (!href) {
+      return;
+    }
+
+    const fullUrl = normalizeHeadFiUrl(href, baseUrl);
+    if (fullUrl && !links.includes(fullUrl)) {
+      links.push(fullUrl);
+    }
+  });
+
+  return links;
+}
+
+async function collectThreadUrlsForForum(page: any, startUrl: string, targetThreadCount: number): Promise<string[]> {
+  const threadUrls: string[] = [];
+  let currentUrl = startUrl;
+  let pageCount = 0;
+
+  while (currentUrl && pageCount < 5 && threadUrls.length < targetThreadCount) {
+    pageCount += 1;
+    await page.goto(currentUrl, { waitUntil: "networkidle", timeout: 30000 });
+    await page.waitForTimeout(1200);
+
+    const html = await page.content();
+    const foundLinks = extractThreadLinksFromHtml(html, currentUrl);
+
+    for (const threadUrl of foundLinks) {
+      if (threadUrls.length >= targetThreadCount) {
+        break;
+      }
+
+      if (!threadUrls.includes(threadUrl)) {
+        threadUrls.push(threadUrl);
+      }
+    }
+
+    if (threadUrls.length >= targetThreadCount) {
+      break;
+    }
+
+    const $ = cheerio.load(html);
+    const nextLink = $('a[rel="next"], .pageNav a').filter((_i, el) => {
+      const text = $(el).text().trim().toLowerCase();
+      const href = $(el).attr("href") || "";
+      return text.includes("next") || href.includes("page-");
+    }).first();
+
+    const nextHref = nextLink.attr("href");
+    if (!nextHref) {
+      break;
+    }
+
+    const nextUrl = normalizeHeadFiUrl(nextHref, currentUrl);
+    if (!nextUrl || nextUrl === currentUrl) {
+      break;
+    }
+
+    currentUrl = nextUrl;
+  }
+
+  return threadUrls;
+}
+
 async function scrapeHeadFiThreadPage(
   url: string,
   browser: any,
@@ -147,26 +263,23 @@ export async function scrapeHeadFiForum(
       await page.waitForTimeout(2000);
 
       const html = await page.content();
-      const $ = cheerio.load(html);
+      const nestedForumLinks = extractNestedForumLinks(html, target.url);
+      const forumUrls = nestedForumLinks.length > 0 ? nestedForumLinks : [target.url];
+      const allThreadUrls: string[] = [];
+      const THREADS_PER_FORUM = 20; /* Extract up to 50 threads per forum to avoid excessive scraping */
 
-      const threadLinks: string[] = [];
-      $('a[href*="/threads/"]').each((_i, el) => {
-        const href = $(el).attr("href");
-        if (href && href.includes("/threads/")) {
-          const fullUrl = href.startsWith("http")
-            ? href
-            : `${new URL(target.url).origin}${href}`;
-          if (!threadLinks.includes(fullUrl)) {
-            threadLinks.push(fullUrl);
+      for (const forumUrl of forumUrls) {
+        const threadUrls = await collectThreadUrlsForForum(page, forumUrl, THREADS_PER_FORUM);
+        console.log(`  Found ${threadUrls.length} thread links in ${forumUrl}`);
+        for (const threadUrl of threadUrls) {
+          if (!allThreadUrls.includes(threadUrl)) {
+            allThreadUrls.push(threadUrl);
           }
         }
-      });
-
-      const limitedLinks = threadLinks.slice(0, 10);
-      console.log(`  Found ${limitedLinks.length} thread links in forum`);
+      }
 
       const allPosts: RawPost[] = [];
-      for (const threadUrl of limitedLinks) {
+      for (const threadUrl of allThreadUrls) {
         console.log(`  Scraping thread: ${threadUrl}`);
         const result = await scrapeHeadFiThreadPage(threadUrl, browser);
         allPosts.push(...result.posts);

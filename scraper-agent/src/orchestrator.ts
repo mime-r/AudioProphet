@@ -4,6 +4,7 @@ import type { AppConfig, AIExtraction, RawPost, ScrapedProduct, ScrapeResult, Sc
 import { analyzePost } from "./ai.js";
 import { loadProducts, addProducts } from "./storage.js";
 import { findExistingProducts, isDuplicate, closeMongoConnection } from "./dedup.js";
+import { searchGoogle } from "./search/google.js";
 
 export interface ScrapeOptions {
   targets: ScrapeTarget[];
@@ -26,6 +27,7 @@ async function processPosts(
   confidenceThreshold: number,
   existingProducts: Awaited<ReturnType<typeof findExistingProducts>>,
 ): Promise<{ products: ScrapedProduct[]; duplicatesSkipped: number }> {
+  const cfg = config;
   const products: ScrapedProduct[] = [];
   const existingProductsData = await loadProducts();
   let duplicatesSkipped = 0;
@@ -71,6 +73,15 @@ async function processPosts(
     products.push(newProduct);
   }
 
+  if (cfg.enableWebSearchEnrichment) {
+    for (const product of products) {
+      const searchResult = await searchGoogle(product.name, `${product.brand} ${product.category}`);
+      if (searchResult.imageUrls[0]) {
+        product.imageDataUrl = searchResult.imageUrls[0];
+      }
+    }
+  }
+
   return { products, duplicatesSkipped };
 }
 
@@ -96,16 +107,18 @@ export async function runScrapeSession(
     let posts: RawPost[] = [];
     let error: string | undefined;
 
-    if (target.platform === "twitter") {
-      const { scrapeTwitterProfile } = await import("./scrapers/twitter.js");
-      const result = await scrapeTwitterProfile(target, cfg);
-      posts = result.posts;
-      error = result.error;
-    } else if (target.platform === "headfi") {
+    if (target.platform === "headfi") {
       const { scrapeHeadFiForum } = await import("./scrapers/headfi.js");
       const result = await scrapeHeadFiForum(target, cfg);
       posts = result.posts;
       error = result.error;
+    } else if (target.platform === "web") {
+      const { scrapeWebAnnouncements } = await import("./scrapers/web.js");
+      const result = await scrapeWebAnnouncements(target);
+      posts = result.posts;
+      error = result.error;
+    } else {
+      error = `Unsupported scraper platform: ${target.platform}`;
     }
 
     totalPosts += posts.length;

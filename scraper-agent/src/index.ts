@@ -6,11 +6,16 @@ import { runScrapeSession, type ScrapeSessionResult } from "./orchestrator.js";
 import type { ScrapeTarget } from "./types.js";
 
 const DEFAULT_TARGETS: ScrapeTarget[] = [
-  { name: "Truthear", platform: "twitter", url: "https://x.com/Truthear_" },
-  { name: "Moondrop", platform: "twitter", url: "https://x.com/MoondropLab" },
-  { name: "7Hz Audio", platform: "twitter", url: "https://x.com/7HzAudio" },
-  { name: "Kiwi Ears", platform: "twitter", url: "https://x.com/KiwiEars" },
-  { name: "Head-Fi", platform: "headfi", url: "https://www.head-fi.org/forums/headphones.3/" },
+  {
+    name: "Head-Fi",
+    platform: "headfi",
+    url: "https://www.head-fi.org/forums/equipment-forums.3/",
+  },
+  {
+    name: "Web discovery sources",
+    platform: "web",
+    url: "https://hifiman.com/,https://www.moondrop.com/,https://www.truthear.com/",
+  },
 ];
 
 function ask(rl: readline.Interface, query: string): Promise<string> {
@@ -29,6 +34,12 @@ function printHeader() {
   console.log("  AI-powered discovery of upcoming audiophile products");
   console.log("=".repeat(60));
   console.log();
+}
+
+function exitMenu(rl: readline.Interface, message = "Exiting...") {
+  console.log(`\n${message}`);
+  rl.close();
+  process.exit(0);
 }
 
 async function runScrape() {
@@ -102,11 +113,7 @@ async function interactiveMenu() {
 
   let running = true;
 
-  process.on("SIGINT", () => {
-    console.log("\n\nExiting...");
-    rl.close();
-    process.exit(0);
-  });
+  rl.on("SIGINT", () => exitMenu(rl));
 
   while (running) {
     console.log("MAIN MENU");

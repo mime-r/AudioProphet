@@ -40,25 +40,47 @@ export function createAIClient(config: AppConfig) {
     if (!config.openaiKey) throw new Error("OPENAI_API_KEY is required for OpenAI provider");
     return new OpenAI({ apiKey: config.openaiKey });
   }
+
+  if (config.aiProvider === "lmstudio") {
+    const baseUrl = config.lmStudioBaseUrl || "http://localhost:1234/v1";
+    const apiKey = config.lmStudioApiKey || "lm-studio";
+
+    return new OpenAI({
+      apiKey,
+      baseURL: baseUrl,
+      dangerouslyAllowBrowser: false,
+    });
+  }
+
   throw new Error(`Unsupported AI provider: ${config.aiProvider}`);
 }
 
 export async function analyzePost(post: RawPost, config: AppConfig): Promise<AIExtraction | null> {
   const client = createAIClient(config);
 
-  const model = config.aiModel || "gpt-4o";
+  const model = config.aiModel || "microsoft/phi-3-mini-128k-instruct";
 
   try {
-    const response = await client.chat.completions.create({
-      model,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: buildPrompt(post) },
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.1,
-      max_tokens: 1000,
-    });
+    const messages = [
+      { role: "system" as const, content: SYSTEM_PROMPT },
+      { role: "user" as const, content: buildPrompt(post) },
+    ];
+
+    const response =
+      config.aiProvider === "openai"
+        ? await client.chat.completions.create({
+            model,
+            messages,
+            response_format: { type: "json_object" as const },
+            temperature: 0.1,
+            max_tokens: 1000,
+          })
+        : await client.chat.completions.create({
+            model,
+            messages,
+            temperature: 0.1,
+            max_tokens: 1000,
+          });
 
     const content = response.choices[0]?.message?.content;
     if (!content) return null;
@@ -67,16 +89,21 @@ export async function analyzePost(post: RawPost, config: AppConfig): Promise<AIE
 
     if (!parsed.isProductAnnouncement) return null;
 
+    const normalizeString = (value: unknown): string =>
+      typeof value === "string" ? value : value == null ? "" : String(value);
+
+    const normalizedMsp = normalizeString(parsed.msrp || "TBA").trim();
+
     return {
       isProductAnnouncement: true,
       confidence: Math.min(1, Math.max(0, parsed.confidence ?? 0)),
-      productName: (parsed.productName || "").trim(),
-      brand: (parsed.brand || "").trim(),
+      productName: normalizeString(parsed.productName).trim(),
+      brand: normalizeString(parsed.brand).trim(),
       category: ALL_CATEGORIES.includes(parsed.category) ? parsed.category : "Other",
-      msrp: (parsed.msrp || "TBA").trim(),
-      releaseDate: (parsed.releaseDate || "").trim(),
-      notes: (parsed.notes || "").trim().slice(0, 300),
-      reasoning: (parsed.reasoning || "").trim(),
+      msrp: normalizedMsp || "TBA",
+      releaseDate: normalizeString(parsed.releaseDate).trim(),
+      notes: normalizeString(parsed.notes).trim().slice(0, 300),
+      reasoning: normalizeString(parsed.reasoning).trim(),
     };
   } catch (error) {
     console.error(`AI analysis failed for post ${post.url}:`, error instanceof Error ? error.message : error);

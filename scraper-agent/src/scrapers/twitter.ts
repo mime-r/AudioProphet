@@ -4,7 +4,7 @@ import type { AppConfig, RawPost, ScrapeTarget } from "../types.js";
 
 export async function scrapeTwitterProfile(
   target: ScrapeTarget,
-  config: AppConfig,
+  config: AppConfig & { twitterCookiesPath?: string },
 ): Promise<{ posts: RawPost[]; error?: string }> {
   console.log(`\nScraping Twitter/X profile: ${target.name} (${target.url})`);
 

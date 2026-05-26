@@ -1,5 +1,6 @@
 import { MongoClient } from "mongodb";
 import { ProductItem, ProductStatus } from "@/lib/types";
+import compressImageToLocal from "@/src/search/image-compression";
 
 const uri = process.env.MONGODB_URI;
 const dbName = process.env.MONGODB_DB || "audio-prophet";
@@ -52,8 +53,19 @@ export async function getPublicProducts(): Promise<ProductItem[]> {
 
 export async function addProduct(newProduct: ProductItem): Promise<ProductItem> {
   const collection = await getProductsCollection();
-  await collection.insertOne(newProduct);
-  return newProduct;
+  
+  // Compress image if present and exceeds size limit
+  let product = { ...newProduct };
+  if (product.imageDataUrl) {
+    const isOverSize = require("@/src/search/image-compression").isImageOverSizeLimit(product.imageDataUrl);
+    if (isOverSize) {
+      console.log("Compressing image to under 300KB before saving...");
+      product.imageDataUrl = await compressImageToLocal(product.imageDataUrl);
+    }
+  }
+  
+  await collection.insertOne(product);
+  return product;
 }
 
 export async function updateProductStatus(id: string, status: ProductStatus) {
@@ -62,7 +74,27 @@ export async function updateProductStatus(id: string, status: ProductStatus) {
 
 export async function updateProduct(id: string, changes: Partial<ProductItem>) {
   const collection = await getProductsCollection();
-  const update = { ...changes, updatedAt: new Date().toISOString() };
+  const existing = await collection.findOne({ id });
+  
+  // Compress image if updated and exceeds size limit
+  let product = { ...changes };
+  if (product.imageDataUrl && existing) {
+    try {
+      const isOverSize = require("@/src/search/image-compression").isImageOverSizeLimit(product.imageDataUrl);
+      if (isOverSize) {
+        console.log("Compressing image to under 300KB before saving...");
+        product.imageDataUrl = await compressImageToLocal(product.imageDataUrl);
+      }
+    } catch (e) {
+      // Silently skip compression on error, keep original image
+      console.warn("Compression skipped for ID", id);
+    }
+  }
+  
+  const update: Partial<ProductItem> = { 
+    ...product, 
+    updatedAt: new Date().toISOString() 
+  };
   await collection.updateOne({ id }, { $set: update });
   return await collection.findOne({ id });
 }

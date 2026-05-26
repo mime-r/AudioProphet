@@ -2,7 +2,7 @@
   "name": "audio-prophet-scraper-agent",
   "version": "1.0.0",
   "private": true,
-  "description": "AI-powered scraper agent for Audio Prophet - automatically discovers upcoming audiophile products from Twitter/X and Head-Fi forums",
+  "description": "AI-powered scraper agent for Audio Prophet - discovers upcoming audiophile products from Head-Fi and curated web sources",
   "type": "module",
   "scripts": {
     "build": "tsc",

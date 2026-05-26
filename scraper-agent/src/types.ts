@@ -1,10 +1,14 @@
 export type ProductCategory = "IEMs" | "Flatheads" | "TWS" | "Headphones" | "Sources" | "Accessories" | "Other";
-export type SourcePlatform = "twitter" | "headfi";
+export type SourcePlatform = "headfi" | "web";
 
 export const ALL_CATEGORIES: ProductCategory[] = [
   "IEMs", "Flatheads", "TWS", "Headphones", "Sources", "Accessories", "Other",
 ];
 
+/**
+ * Scraped product enriched from AI analysis or web search results.
+ * imageDataUrl field is optional - stores base64-encoded image under 300KB limit.
+ */
 export interface ScrapedProduct {
   id: string;
   name: string;
@@ -23,6 +27,7 @@ export interface ScrapedProduct {
   submissionError?: string;
   createdAt: string;
   rawContent?: string;
+  imageDataUrl?: string; // Optional - stores compressed image (data:image/jpeg;base64,...) under 300KB limit
 }
 
 export interface RawPost {
@@ -35,6 +40,9 @@ export interface RawPost {
   images: string[];
 }
 
+/**
+ * AI extraction from forum and web source posts - includes optional imageDataUrl for web scrapers (like Google Search).
+ */
 export interface AIExtraction {
   isProductAnnouncement: boolean;
   confidence: number;
@@ -45,6 +53,7 @@ export interface AIExtraction {
   releaseDate: string;
   notes: string;
   reasoning: string;
+  imageDataUrl?: string; // Optional - allows web scraper (Google Search) to inject enriched image data under 300KB limit
 }
 
 export interface ScrapeTarget {
@@ -61,19 +70,16 @@ export interface ScrapeResult {
 }
 
 export interface AppConfig {
-  aiProvider: "openai" | "anthropic";
+  aiProvider: "openai" | "anthropic" | "lmstudio";
   aiModel?: string;
   openaiKey?: string;
   anthropicKey?: string;
+  lmStudioBaseUrl?: string;
+  lmStudioApiKey?: string;
   mongodbUri?: string;
   mongodbDb?: string;
   appUrl: string;
-  twitterMethod: "api" | "browser";
-  twitterCookiesPath?: string;
-  twitterBearerToken?: string;
-  twitterApiKey?: string;
-  twitterApiSecret?: string;
-  twitterAccessToken?: string;
-  twitterAccessSecret?: string;
   port: number;
+  enableWebSearchEnrichment?: boolean;
 }
+

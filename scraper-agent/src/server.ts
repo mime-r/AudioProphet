@@ -153,11 +153,16 @@ export async function startServer(config?: AppConfig) {
       };
 
       const defaultTargets: ScrapeTarget[] = [
-        { name: "Truthear", platform: "twitter", url: "https://x.com/Truthear_" },
-        { name: "Moondrop", platform: "twitter", url: "https://x.com/MoondropLab" },
-        { name: "7Hz Audio", platform: "twitter", url: "https://x.com/7HzAudio" },
-        { name: "Kiwi Ears", platform: "twitter", url: "https://x.com/KiwiEars" },
-        { name: "Head-Fi", platform: "headfi", url: "https://www.head-fi.org/forums/headphones.3/" },
+        {
+          name: "Head-Fi",
+          platform: "headfi",
+          url: "https://www.head-fi.org/forums/equipment-forums.3/,https://www.head-fi.org/forums/head-fi-meet-impressions-trade-show-reports-factory-tours.45/",
+        },
+        {
+          name: "Web discovery sources",
+          platform: "web",
+          url: "https://www.linsoul.com/,https://hifiman.com/,https://www.moondrop.com/,https://www.truthear.com/,https://www.tinhifi.com/,https://moondroplab.com/en/home,https://kineraaudio.com/,https://www.hidizs.net/,https://store.hiby.com/,https://tipsyaudio.com/", /* "" */
+        },
       ];
 
       res.json({
@@ -187,8 +192,8 @@ export async function startServer(config?: AppConfig) {
         reviewed: products.filter((p) => p.reviewed).length,
         approved: products.filter((p) => p.approved).length,
         submitted: products.filter((p) => p.submitted).length,
-        twitter: products.filter((p) => p.sourceType === "twitter").length,
         headfi: products.filter((p) => p.sourceType === "headfi").length,
+        web: products.filter((p) => p.sourceType === "web").length,
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to get stats." });
