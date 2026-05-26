@@ -1,6 +1,14 @@
-import { ALL_CATEGORIES } from "./types.js";
-
 const MAX_IMAGE_BYTES = 300_000; // Must match main app's limit
+
+const ALL_CATEGORIES = [
+  "IEMs",
+  "Flatheads",
+  "TWS",
+  "Headphones",
+  "Sources",
+  "Accessories",
+  "Other",
+] as const;
 
 export interface ValidationField {
   field: string;
@@ -65,7 +73,7 @@ export function validateProduct(product: Partial<any>): ValidationResult {
   // Optional imageDataUrl - validate size if provided
   if (product.imageDataUrl && typeof product.imageDataUrl === "string") {
     const compressed = validateImageDataSize(product.imageDataUrl);
-    if (!compressed || !compressed.startsWith('data:image')) {
+    if (typeof compressed === "string" && !compressed.startsWith("data:image")) {
       errors.push({ field: "imageDataUrl", message: "Image data must be under 300KB (base64-encoded JPEG). Please ensure images are compressed properly." });
     }
   }
@@ -79,7 +87,6 @@ export function validateProduct(product: Partial<any>): ValidationResult {
  */
 function validateImageDataSize(base64DataUrl: string): boolean | string {
   if (!base64DataUrl) return true;
-  if (typeof base64DataUrl !== "string") return base64DataUrl.startsWith('data:image/') ? base64DataUrl : "";
 
   // Extract and decode size estimate
   try {
