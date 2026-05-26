@@ -2,7 +2,7 @@
 
 **The future of audiophile product discovery.**
 
-A community-driven CMS that aggregates, AI-extracts, and showcases upcoming (yet-to-be-released) audiophile products — from IEMs and headphones to DACs and desktop accessories.
+A community-driven CMS that aggregates, AI-extracts, and showcases upcoming (yet-to-be-released) audiophile products -  from IEMs and headphones to DACs and desktop accessories.
 
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev)
@@ -15,10 +15,10 @@ A community-driven CMS that aggregates, AI-extracts, and showcases upcoming (yet
 
 ## Features
 
-- **Product Browser** — Browse, filter (category, brand, price, date), search, and sort upcoming products with a clean dark-themed UI.
-- **Community Submissions** — Users can submit product announcements with image upload, reCAPTCHA protection, and rate limiting.
-- **Admin Panel** — Review, approve, reject, edit, and manage submissions with inline editing and bulk actions.
-- **AI-Powered Scraper** — Autonomous agent scrapes Head-Fi, Twitter/X, and audiophile brand sites, then uses AI to extract structured product data.
+- **Product Browser** - Browse, filter (category, brand, price, date), search, and sort upcoming products with a clean dark-themed UI.
+- **Community Submissions** - Users can submit product announcements with image upload, reCAPTCHA protection, and rate limiting.
+- **Admin Panel** - Review, approve, reject, edit, and manage submissions with inline editing and bulk actions.
+- **AI-Powered Scraper** - Autonomous agent scrapes Head-Fi, Twitter/X, and audiophile brand sites, then uses AI to extract structured product data.
 
 ---
 
@@ -99,6 +99,9 @@ cp .env.example .env
 
 # Run the scraper
 npm run dev
+
+# After npm install, you can directly run the following without cd-ing into scraper-agent (from audio-prophet)
+npm run scraper dev
 ```
 
 The review UI will be available at [http://localhost:4000](http://localhost:4000).
