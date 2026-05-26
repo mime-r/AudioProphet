@@ -3,9 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { ProductItem } from "@/lib/types";
+import type { ProductCategory } from "@/lib/types";
 
 const defaultAdminUser = "admin";
 const defaultAdminPass = "password";
+const categories: ProductCategory[] = ["IEMs", "Flatheads", "TWS", "Headphones", "Sources", "Accessories", "Other"];
 
 export default function AdminPage() {
   const [user, setUser] = useState("");
@@ -79,7 +81,7 @@ export default function AdminPage() {
       name: item.name,
       brand: item.brand,
       category: item.category,
-      msrp: item.msrp,
+      msrp: item.msrp || "",
       source: item.source,
       description: item.description || "",
       releaseDate: item.releaseDate || "",
@@ -130,6 +132,11 @@ export default function AdminPage() {
 
     if (!editForm.name.trim() || !editForm.brand.trim() || !editForm.source.trim()) {
       setError("Please fill in the product name, brand, and source link.");
+      return;
+    }
+
+    if (!editMsrpIsTba && editForm.msrp && !/^[0-9]+$/.test(editForm.msrp)) {
+      setError("MSRP must be a whole number without symbols. Round up to the nearest whole number.");
       return;
     }
 
@@ -482,7 +489,7 @@ export default function AdminPage() {
                 onChange={(event) => setShowTba(event.target.checked)}
                 className="h-4 w-4 rounded border-white/10 bg-zinc-950 text-blue-500"
               />
-              Include TBA
+              Include TBA (Release Date)
             </label>
             <label className="inline-flex items-center gap-2">
               <input
@@ -491,7 +498,7 @@ export default function AdminPage() {
                 onChange={(event) => setShowOnlyTba(event.target.checked)}
                 className="h-4 w-4 rounded border-white/10 bg-zinc-950 text-blue-500"
               />
-              Only TBA
+              Only TBA (Release Date)
             </label>
           </div>
 
@@ -603,17 +610,29 @@ export default function AdminPage() {
                       <div className="mt-4 grid gap-4 sm:grid-cols-2">
                         <label className="block">
                           <span className="text-sm font-medium text-zinc-200">Category</span>
+                          <select
+                            value={editForm.category}
+                            onChange={(event) => handleEditChange("category", event.target.value)}
+                            className="mt-2 w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-blue-400"
+                          >
+                            {categories.map((category) => (
+                              <option key={category} value={category}>
+                                {category}
+                              </option>
+                            ))}
+                          </select>
+                          {/*
                           <input
                             value={editForm.category}
                             onChange={(event) => handleEditChange("category", event.target.value)}
                             className="mt-2 w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-blue-400"
-                          />
+                          />*/}
                         </label>
                         <label className="block">
                           <span className="text-sm font-medium text-zinc-200">MSRP</span>
                           <input
                             type="text"
-                            value={editForm.msrp}
+                            value={editForm.msrp ?? ""}
                             onChange={(event) => {
                               const val = event.target.value.replace(/[^0-9]/g, "");
                               handleEditChange("msrp", val);

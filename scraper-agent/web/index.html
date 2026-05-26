@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Audio Prophet — Scraper Agent</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="header-top">
+        <div>
+          <p class="header-label">Audio Prophet</p>
+          <h1 class="header-title">Scraper Agent</h1>
+          <p class="header-subtitle">Review AI-discovered upcoming audiophile products</p>
+        </div>
+        <div class="header-actions">
+          <button id="runScrapeBtn" class="btn btn-primary" onclick="runScrape()">Run Scrape</button>
+          <a href="/" class="btn btn-outline">Open Main App</a>
+        </div>
+      </div>
+      <div id="progressBanner" class="progress-banner hidden">
+        <div class="progress-text">Scraping in progress...</div>
+        <div class="progress-bar"><div class="progress-fill"></div></div>
+      </div>
+      <div class="stats-row" id="statsRow">
+        <div class="stat"><span class="stat-value" id="statTotal">0</span><span class="stat-label">Total</span></div>
+        <div class="stat"><span class="stat-value" id="statReviewed">0</span><span class="stat-label">Reviewed</span></div>
+        <div class="stat"><span class="stat-value" id="statApproved">0</span><span class="stat-label">Approved</span></div>
+        <div class="stat"><span class="stat-value" id="statSubmitted">0</span><span class="stat-label">Submitted</span></div>
+        <div class="stat"><span class="stat-value twitter" id="statTwitter">0</span><span class="stat-label">Twitter</span></div>
+        <div class="stat"><span class="stat-value headfi" id="statHeadfi">0</span><span class="stat-label">Head-Fi</span></div>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <div class="toolbar-group">
+        <input id="searchInput" type="search" placeholder="Search name, brand, notes..." class="search-input" oninput="applyFilters()" />
+      </div>
+      <div class="toolbar-group">
+        <label class="filter-label">
+          <input type="checkbox" id="filterTwitter" checked onchange="applyFilters()" />
+          Twitter/X
+        </label>
+        <label class="filter-label">
+          <input type="checkbox" id="filterHeadfi" checked onchange="applyFilters()" />
+          Head-Fi
+        </label>
+      </div>
+      <div class="toolbar-group">
+        <label class="filter-label">
+          <input type="checkbox" id="filterReviewed" onchange="applyFilters()" />
+          Reviewed
+        </label>
+        <label class="filter-label">
+          <input type="checkbox" id="filterApproved" onchange="applyFilters()" />
+          Approved
+        </label>
+        <label class="filter-label">
+          <input type="checkbox" id="filterSubmitted" onchange="applyFilters()" />
+          Submitted
+        </label>
+      </div>
+      <div class="toolbar-group">
+        <label class="filter-label">
+          Min confidence:
+          <select id="confidenceFilter" onchange="applyFilters()">
+            <option value="0">Any</option>
+            <option value="0.3">30%</option>
+            <option value="0.5" selected>50%</option>
+            <option value="0.7">70%</option>
+            <option value="0.9">90%</option>
+          </select>
+        </label>
+        <label class="filter-label">
+          Sort:
+          <select id="sortFilter" onchange="applyFilters()">
+            <option value="date">Newest</option>
+            <option value="confidence">Confidence</option>
+            <option value="name">Name</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <div id="emptyState" class="empty-state hidden">
+      <h2>No products found</h2>
+      <p>Run a scrape to discover upcoming audio products from Twitter/X and Head-Fi.</p>
+      <button class="btn btn-primary" onclick="runScrape()">Run Scrape</button>
+    </div>
+
+    <div id="productList" class="product-list"></div>
+  </div>
+
+  <div id="editModal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Edit Product</h2>
+        <button class="modal-close" onclick="closeEditModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <label class="form-field">
+            <span>Product name</span>
+            <input id="editName" class="form-input" />
+          </label>
+          <label class="form-field">
+            <span>Brand</span>
+            <input id="editBrand" class="form-input" />
+          </label>
+          <label class="form-field">
+            <span>Category</span>
+            <select id="editCategory" class="form-input">
+              <option>IEMs</option><option>Flatheads</option><option>TWS</option>
+              <option>Headphones</option><option>Sources</option><option>Accessories</option><option>Other</option>
+            </select>
+          </label>
+          <label class="form-field">
+            <span>MSRP</span>
+            <input id="editMsrp" class="form-input" placeholder="$ or TBA" />
+          </label>
+          <label class="form-field">
+            <span>Release date</span>
+            <input id="editReleaseDate" type="date" class="form-input" />
+          </label>
+          <label class="form-field">
+            <span>Source URL</span>
+            <input id="editSource" class="form-input" />
+          </label>
+        </div>
+        <label class="form-field">
+          <span>Notes (max 300 chars)</span>
+          <textarea id="editNotes" class="form-textarea" maxlength="300"></textarea>
+        </label>
+        <div id="editErrors" class="form-errors hidden"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeEditModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveEdit()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { ProductCategory, ProductItem } from "@/lib/types";
 
-const categories: ProductCategory[] = ["IEMs", "Flatheads", "Headphones", "Sources", "Accessories", "Other"];
+const categories: ProductCategory[] = ["IEMs", "Flatheads", "TWS", "Headphones", "Sources", "Accessories", "Other"];
 const SUPPORT_URL = "https://discord.gg/wG4RgWQNUu";
 
 function getStatusLabel(status: string) {

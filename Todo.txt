@@ -1,5 +1,9 @@
-1. add category 'TWS'
-2. add a character limit to item description to 300.
-3. item description display doesn't show as multi-line even though when I go into the editing page it is multiple-lined
-4. the previous change to MSRP, i.e. "for MSRP entering in submissions page, only allow numbers, without symbols like $. The field can only accept whole numbers. do not allow submission if price entered is like 55.99, and remind user to round up to the nearest whole number. Add a way for MSRP entering as TBA to be indicated." needs to be applied to the admin edit page as well. It's still showing the same thing as before.
-5. always display item title in both admin and main page as '{Brand} {Name}', so users don't include name under product name in the submissions page. for example they only enter in 'Nova' for the name, then the brand enter in 'Truthear', when it finally appeasr it should appear as 'Truthear Nova'
+Make an external comprehensive script/program that does the following:
+-> Scrape Twitter/X by going through posts from a list of profiles (audio company) that will be provided.
+-> Use/Implement AI to go through each posts that can determine whether a profile (tied to the audio company) is announcing an upcoming product
+-> Scrape Head-fi forum by going through their page, and forum threads.
+-> Use/Implement AI to go through and extract upcoming products releases
+-> The following data must be extracted and formatted from all data scrapes (to integrate it as submissions) and classified: 'Product name', 'Brand', 'Category'- IEMs, Flatheads, Headphones, Sources, Accessories, Other, MSRP (USD) - can be TBA, 'Release date', 'Notes'- such as driver configuration and specs but must be under 300 characters. 
+-> Do Data Validation to ensure that the extracted data must be formatted into something that fits all Submission Page requirements
+-> Store all results locally and create a web interface where I can browse through the scraped data. Make a button that sends each hand-picked entry as a submission through the submissions page using an API.
+Do all the above with this purpose in mind: Create an AI agent that replaces all manual user scraping for contribution to the Audio Prophet website.

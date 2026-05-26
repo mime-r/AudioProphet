@@ -5,7 +5,7 @@ import Link from "next/link";
 import Script from "next/script";
 import type { ProductCategory } from "@/lib/types";
 
-const categories: ProductCategory[] = ["IEMs", "Flatheads", "Headphones", "Sources", "Accessories", "Other"];
+const categories: ProductCategory[] = ["IEMs", "Flatheads", "TWS", "Headphones", "Sources", "Accessories", "Other"];
 const MAX_IMAGE_BYTES = 300_000;
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 

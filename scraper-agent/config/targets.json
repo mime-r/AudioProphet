@@ -1,0 +1,37 @@
+[
+  {
+    "name": "Truthear",
+    "platform": "twitter",
+    "url": "https://x.com/Truthear_"
+  },
+  {
+    "name": "Moondrop",
+    "platform": "twitter",
+    "url": "https://x.com/MoondropLab"
+  },
+  {
+    "name": "7Hz Audio",
+    "platform": "twitter",
+    "url": "https://x.com/7HzAudio"
+  },
+  {
+    "name": "Kiwi Ears",
+    "platform": "twitter",
+    "url": "https://x.com/KiwiEars"
+  },
+  {
+    "name": "Headphones & IEMs Forum",
+    "platform": "headfi",
+    "url": "https://www.head-fi.org/forums/headphones.3/"
+  },
+  {
+    "name": "Portable Headphone Amps",
+    "platform": "headfi",
+    "url": "https://www.head-fi.org/forums/portable-headphone-amps.9/"
+  },
+  {
+    "name": "Portable Source Gear",
+    "platform": "headfi",
+    "url": "https://www.head-fi.org/forums/portable-source-gear.10/"
+  }
+]
