@@ -1,4 +1,5 @@
-![AudioProphet Icon](public/audioprophet-candidate.png)
+<img src="public/audioprophet-candidate.png" width="25%">
+
 # AudioProphet
 
 **The future of audiophile product discovery.**
@@ -12,6 +13,9 @@ A community-driven CMS that aggregates, AI-extracts, and showcases upcoming (yet
 [![MongoDB](https://img.shields.io/badge/MongoDB-47A248?logo=mongodb)](https://mongodb.com)
 [![OpenAI](https://img.shields.io/badge/AI-OpenAI%20%7C%20LM%20Studio-412991)](#scraper-agent)
 
+
+![Main UI Screenshot 1](public/main_UI_screenshot_1.png)
+
 ---
 
 ## Features
@@ -22,6 +26,8 @@ A community-driven CMS that aggregates, AI-extracts, and showcases upcoming (yet
 - **AI-Powered Scraper** - Autonomous agent scrapes Head-Fi, Twitter/X, and audiophile brand sites, then uses AI to extract structured product data.
 
 ---
+
+![Scraper Web UI Screenshot 1](public/scraper_UI_screenshot_1.png)
 
 ## Scraper Agent
 
