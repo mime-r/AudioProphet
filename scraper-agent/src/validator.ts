@@ -1,5 +1,5 @@
-import type { ProductCategory, ScrapedProduct } from "./types.js";
-import { ALL_CATEGORIES } from "./types.js";
+import type { ProductCategory, ScrapedProduct } from "./types";
+import { ALL_CATEGORIES } from "./types";
 
 export interface ValidationError {
   field: string;
