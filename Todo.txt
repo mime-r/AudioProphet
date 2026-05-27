@@ -1,9 +1,2 @@
-Make an external comprehensive script/program that does the following:
--> Scrape Twitter/X by going through posts from a list of profiles (audio company) that will be provided.
--> Use/Implement AI to go through each posts that can determine whether a profile (tied to the audio company) is announcing an upcoming product
--> Scrape Head-fi forum by going through their page, and forum threads.
--> Use/Implement AI to go through and extract upcoming products releases
--> The following data must be extracted and formatted from all data scrapes (to integrate it as submissions) and classified: 'Product name', 'Brand', 'Category'- IEMs, Flatheads, Headphones, Sources, Accessories, Other, MSRP (USD) - can be TBA, 'Release date', 'Notes'- such as driver configuration and specs but must be under 300 characters. 
--> Do Data Validation to ensure that the extracted data must be formatted into something that fits all Submission Page requirements
--> Store all results locally and create a web interface where I can browse through the scraped data. Make a button that sends each hand-picked entry as a submission through the submissions page using an API.
-Do all the above with this purpose in mind: Create an AI agent that replaces all manual user scraping for contribution to the Audio Prophet website.
+Make sure .env, .env.local and .env.example are all matching. Remove redundant/unnecessary code, files or empty folders.
+

@@ -58,10 +58,10 @@ export function formatForSubmission(product: ScrapedProduct) {
     name: product.name.trim(),
     brand: product.brand.trim(),
     category: product.category,
-    msrp: product.msrp && product.msrp !== "TBA" ? product.msrp.replace(/[^0-9]/g, "") : "",
+    msrp: product.msrp && product.msrp !== "TBA" ? String(Math.round(parseFloat(product.msrp.replace(/[^0-9.]/g, "")) || 0)) : "",
     source: product.source.trim(),
     description: product.notes?.trim() || "",
     releaseDate: product.releaseDate?.trim() || "",
-    imageDataUrl: "",
+    imageDataUrl: product.imageDataUrl ?? "",
   };
 }

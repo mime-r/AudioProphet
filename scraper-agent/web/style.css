@@ -110,8 +110,18 @@ body {
 .product-card:hover { border-color: var(--text3); }
 .product-card.is-new { border-color: var(--accent); }
 .product-card.submitted { opacity: 0.6; border-color: var(--green); }
-.product-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.product-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
 .product-card-info { flex: 1; min-width: 0; }
+.product-image {
+  width: 80px; height: 80px; object-fit: cover;
+  border-radius: var(--radius-sm); flex-shrink: 0;
+  border: 1px solid var(--border); background: var(--surface2);
+}
+.product-image-placeholder {
+  width: 80px; height: 80px; flex-shrink: 0;
+  border-radius: var(--radius-sm); background: var(--surface2);
+  border: 1px solid var(--border);
+}
 .product-category {
   font-size: 11px; text-transform: uppercase; letter-spacing: 0.24em; color: var(--text3); margin-bottom: 4px;
 }

@@ -1,14 +1,21 @@
-import { chromium } from "playwright";
 import * as cheerio from "cheerio";
 import type { AppConfig, RawPost, ScrapeTarget } from "../types.js";
 
+const FETCH_HEADERS = {
+  "User-Agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+  "Accept-Language": "en-US,en;q=0.9",
+  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+  "Cache-Control": "max-age=0",
+  "Upgrade-Insecure-Requests": "1",
+  "Sec-Fetch-Dest": "document",
+  "Sec-Fetch-Mode": "navigate",
+  "Sec-Fetch-Site": "none",
+  "Sec-Fetch-User": "?1",
+};
+
 function truncateText(text: string, maxLength: number = 4000): string {
   return text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
-}
-
-function extractThreadId(url: string): string | null {
-  const match = url.match(/\/threads\/[^/]+\.(\d+)/);
-  return match ? match[1] : null;
 }
 
 function extractPageNumber(url: string): number {
@@ -17,14 +24,8 @@ function extractPageNumber(url: string): number {
 }
 
 function normalizeHeadFiUrl(url: string, baseUrl: string): string {
-  if (!url) {
-    return "";
-  }
-
-  if (url.startsWith("http")) {
-    return url;
-  }
-
+  if (!url) return "";
+  if (url.startsWith("http")) return url;
   try {
     return new URL(url, baseUrl).toString();
   } catch {
@@ -36,7 +37,6 @@ function isThreadLink(href: string): boolean {
   if (!href || href.includes("/post-") || href.includes("/activity/") || href.includes("/page-") || href.includes("/latest")) {
     return false;
   }
-
   return /^\/threads\/[^/]+(?:\.\d+)?\/?$/.test(href);
 }
 
@@ -46,18 +46,10 @@ function extractThreadLinksFromHtml(html: string, baseUrl: string): string[] {
 
   $('a[href*="/threads/"]').each((_i, el) => {
     const href = $(el).attr("href");
-    if (!href) {
-      return;
-    }
-
+    if (!href) return;
     const fullUrl = normalizeHeadFiUrl(href, baseUrl);
-    if (!fullUrl || !isThreadLink(new URL(fullUrl).pathname)) {
-      return;
-    }
-
-    if (!links.includes(fullUrl)) {
-      links.push(fullUrl);
-    }
+    if (!fullUrl || !isThreadLink(new URL(fullUrl).pathname)) return;
+    if (!links.includes(fullUrl)) links.push(fullUrl);
   });
 
   return links;
@@ -69,64 +61,63 @@ function extractNestedForumLinks(html: string, baseUrl: string): string[] {
 
   $('div.node--depth2.node--forum').each((_i, el) => {
     const href = $(el).find('h3.node-title a').first().attr("href");
-    if (!href) {
-      return;
-    }
-
+    if (!href) return;
     const fullUrl = normalizeHeadFiUrl(href, baseUrl);
-    if (fullUrl && !links.includes(fullUrl)) {
-      links.push(fullUrl);
-    }
+    if (fullUrl && !links.includes(fullUrl)) links.push(fullUrl);
   });
 
   return links;
 }
 
-async function collectThreadUrlsForForum(page: any, startUrl: string, targetThreadCount: number): Promise<string[]> {
+async function collectThreadUrlsForForum(
+  forumUrl: string,
+  targetThreadCount: number,
+): Promise<string[]> {
   const threadUrls: string[] = [];
-  let currentUrl = startUrl;
+  let currentUrl = forumUrl;
   let pageCount = 0;
 
   while (currentUrl && pageCount < 5 && threadUrls.length < targetThreadCount) {
     pageCount += 1;
-    await page.goto(currentUrl, { waitUntil: "networkidle", timeout: 30000 });
-    await page.waitForTimeout(1200);
 
-    const html = await page.content();
-    const foundLinks = extractThreadLinksFromHtml(html, currentUrl);
+    try {
+      const response = await fetch(currentUrl, { headers: FETCH_HEADERS });
 
-    for (const threadUrl of foundLinks) {
-      if (threadUrls.length >= targetThreadCount) {
+      if (!response.ok) {
+        console.warn(`  Warning: HTTP ${response.status} fetching ${currentUrl}`);
         break;
       }
 
-      if (!threadUrls.includes(threadUrl)) {
-        threadUrls.push(threadUrl);
+      const html = await response.text();
+      const foundLinks = extractThreadLinksFromHtml(html, currentUrl);
+
+      for (const threadUrl of foundLinks) {
+        if (threadUrls.length >= targetThreadCount) break;
+        if (!threadUrls.includes(threadUrl)) threadUrls.push(threadUrl);
       }
-    }
 
-    if (threadUrls.length >= targetThreadCount) {
+      if (threadUrls.length >= targetThreadCount) break;
+
+      const $ = cheerio.load(html);
+      const nextLink = $('a[rel="next"], .pageNav a')
+        .filter((_i, el) => {
+          const text = $(el).text().trim().toLowerCase();
+          const href = $(el).attr("href") || "";
+          return text.includes("next") || href.includes("page-");
+        })
+        .first();
+
+      const nextHref = nextLink.attr("href");
+      if (!nextHref) break;
+
+      const nextUrl = normalizeHeadFiUrl(nextHref, currentUrl);
+      if (!nextUrl || nextUrl === currentUrl) break;
+
+      currentUrl = nextUrl;
+    } catch (error) {
+      console.warn(`  Warning: Error fetching forum page: ${error}`);
       break;
     }
-
-    const $ = cheerio.load(html);
-    const nextLink = $('a[rel="next"], .pageNav a').filter((_i, el) => {
-      const text = $(el).text().trim().toLowerCase();
-      const href = $(el).attr("href") || "";
-      return text.includes("next") || href.includes("page-");
-    }).first();
-
-    const nextHref = nextLink.attr("href");
-    if (!nextHref) {
-      break;
-    }
-
-    const nextUrl = normalizeHeadFiUrl(nextHref, currentUrl);
-    if (!nextUrl || nextUrl === currentUrl) {
-      break;
-    }
-
-    currentUrl = nextUrl;
   }
 
   return threadUrls;
@@ -134,89 +125,79 @@ async function collectThreadUrlsForForum(page: any, startUrl: string, targetThre
 
 async function scrapeHeadFiThreadPage(
   url: string,
-  browser: any,
 ): Promise<{ posts: RawPost[]; nextPageUrl: string | null }> {
-  const context = await browser.newContext({
-    userAgent:
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-  });
-  const page = await context.newPage();
-
   try {
-    await page.goto(url, { waitUntil: "networkidle", timeout: 30000 });
-    await page.waitForTimeout(2000);
+    const response = await fetch(url, { headers: FETCH_HEADERS });
 
-    const html = await page.content();
+    if (!response.ok) {
+      console.warn(`  [headfi] HTTP ${response.status} at ${url}`);
+      return { posts: [], nextPageUrl: null };
+    }
+
+    const html = await response.text();
     const $ = cheerio.load(html);
 
-    const posts: RawPost[] = [];
+    const title = $("title").text();
+    const titleLower = title.toLowerCase();
+    if (titleLower.includes("log in") || titleLower.includes("sign in") || titleLower.includes("just a moment")) {
+      console.warn(`  [headfi] Login wall / challenge at ${url} — "${title}"`);
+      return { posts: [], nextPageUrl: null };
+    }
+
     const baseUrl = new URL(url);
     const threadMatch = url.match(/\/threads\/[^/]+\.(\d+)/);
     const threadId = threadMatch ? threadMatch[1] : "";
+    const pageNum = extractPageNumber(url);
+    const threadTitle = $("h1.p-title-value, h1").first().text().trim();
 
-    const threadTitle = $("h1").first().text().trim() || $(".titleBar h1").text().trim() || "";
+    const posts: RawPost[] = [];
+    $('article.message--post, article[id^="js-post"]').each((_i, article) => {
+      const author =
+        $(article).find(".message-name a, .message-name, a.username").first().text().trim() || "unknown";
+      const text =
+        $(article).find(".bbWrapper, .message-body .bbWrapper, .message-body").first().text().trim() ||
+        $(article).text().trim();
+      const timeEl = $(article).find("time").first();
+      const timestamp = timeEl.attr("datetime") || timeEl.text().trim() || "";
+      const id = $(article).attr("id") || "";
 
-    $("article, .message, li.message, div.messageContent, .messageInfo").each((_i, el) => {
-      const $el = $(el);
-
-      const authorEl = $el.find(".username, .messageAuthor, a.username");
-      const author = authorEl.first().text().trim() || "unknown";
-
-      const authorDisplayName = author;
-
-      const contentEl = $el.find(
-        ".messageContent, .message-body, .bbCodeBlock, .messageText",
-      );
-      let text = contentEl.text().trim();
-
-      if (!text) {
-        text = $el.text().trim();
-      }
+      const images = $(article)
+        .find("img")
+        .map((_j, img) => $(img).attr("src") || "")
+        .get()
+        .filter((src) => src && !src.includes("smilie") && !src.includes("avatar") && !src.includes("logo"));
 
       if (text.length < 20) return;
 
-      const timeEl = $el.find("time, .dateTime, abbr.DateTime");
-      const timestamp = timeEl.attr("datetime") || timeEl.attr("data-time") || timeEl.text().trim() || "";
-
-      const postId = $el.attr("id") || "";
-      const postUrl = postId
-        ? `${baseUrl.origin}/threads/${threadId}/page-${extractPageNumber(url)}#${postId}`
-        : url;
-
-      const images: string[] = [];
-      $el.find("img").each((_j, img) => {
-        const src = $(img).attr("src");
-        if (src && !src.includes("smilie") && !src.includes("avatar") && !src.includes("logo")) {
-          images.push(src.startsWith("//") ? `https:${src}` : src);
-        }
-      });
-
       posts.push({
         text: truncateText(`${threadTitle ? `[Thread: ${threadTitle}] ` : ""}${text}`),
-        url: postUrl,
+        url: id ? `${baseUrl.origin}/threads/${threadId}/page-${pageNum}#${id}` : url,
         author,
-        authorDisplayName,
-        platform: "headfi",
+        authorDisplayName: author,
+        platform: "headfi" as const,
         timestamp,
         images,
       });
     });
 
-    const nextLink = $('a[rel="next"], .pageNav a:contains("Next"), a.text:contains("Next")');
-    let nextPageUrl: string | null = null;
-    if (nextLink.length > 0) {
-      const href = nextLink.first().attr("href");
-      if (href) {
-        nextPageUrl = href.startsWith("http") ? href : `${baseUrl.origin}${href}`;
-      }
+    console.log(`    [headfi] Found ${posts.length} posts on ${url}`);
+
+    if (posts.length === 0) {
+      const articleCount = $("article").length;
+      const bodySnippet = $("body").html()?.slice(0, 400).replace(/\s+/g, " ") ?? "";
+      console.warn(`  [headfi] 0 posts on "${title}" — total articles: ${articleCount}`);
+      console.warn(`  [headfi] Body snippet: ${bodySnippet}`);
     }
+
+    const nextHref = $('a[rel="next"], .pageNav-jump--next').first().attr("href") || "";
+    const nextPageUrl = nextHref
+      ? nextHref.startsWith("http") ? nextHref : `${baseUrl.origin}${nextHref}`
+      : null;
 
     return { posts, nextPageUrl };
   } catch (error) {
     console.error(`  Error scraping Head-Fi page ${url}:`, error instanceof Error ? error.message : error);
     return { posts: [], nextPageUrl: null };
-  } finally {
-    await context.close();
   }
 }
 
@@ -227,15 +208,7 @@ export async function scrapeHeadFiForum(
 ): Promise<{ posts: RawPost[]; error?: string }> {
   console.log(`\nScraping Head-Fi: ${target.name} (${target.url})`);
 
-  const browser = await chromium.launch({ headless: true });
-
   try {
-    const context = await browser.newContext({
-      userAgent:
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-      viewport: { width: 1280, height: 720 },
-    });
-
     if (target.url.includes("/threads/")) {
       const allPosts: RawPost[] = [];
       let currentUrl: string | null = target.url;
@@ -244,7 +217,7 @@ export async function scrapeHeadFiForum(
       while (currentUrl && pageCount < maxPages) {
         pageCount++;
         console.log(`  Fetching page ${pageCount}...`);
-        const result = await scrapeHeadFiThreadPage(currentUrl, browser);
+        const result = await scrapeHeadFiThreadPage(currentUrl);
         allPosts.push(...result.posts);
         currentUrl = result.nextPageUrl;
       }
@@ -258,30 +231,31 @@ export async function scrapeHeadFiForum(
     }
 
     if (target.url.includes("/forums/")) {
-      const page = await context.newPage();
-      await page.goto(target.url, { waitUntil: "networkidle", timeout: 30000 });
-      await page.waitForTimeout(2000);
+      const response = await fetch(target.url, { headers: FETCH_HEADERS });
+      if (!response.ok) {
+        return { posts: [], error: `Failed to fetch forum page: HTTP ${response.status}` };
+      }
 
-      const html = await page.content();
+      const html = await response.text();
       const nestedForumLinks = extractNestedForumLinks(html, target.url);
       const forumUrls = nestedForumLinks.length > 0 ? nestedForumLinks : [target.url];
       const allThreadUrls: string[] = [];
-      const THREADS_PER_FORUM = 20; /* Extract up to 50 threads per forum to avoid excessive scraping */
+      const THREADS_PER_FORUM = 10;
 
       for (const forumUrl of forumUrls) {
-        const threadUrls = await collectThreadUrlsForForum(page, forumUrl, THREADS_PER_FORUM);
+        const threadUrls = await collectThreadUrlsForForum(forumUrl, THREADS_PER_FORUM);
         console.log(`  Found ${threadUrls.length} thread links in ${forumUrl}`);
         for (const threadUrl of threadUrls) {
-          if (!allThreadUrls.includes(threadUrl)) {
-            allThreadUrls.push(threadUrl);
-          }
+          if (!allThreadUrls.includes(threadUrl)) allThreadUrls.push(threadUrl);
         }
       }
 
+      console.log(`  Total threads to scrape: ${allThreadUrls.length}`);
       const allPosts: RawPost[] = [];
       for (const threadUrl of allThreadUrls) {
         console.log(`  Scraping thread: ${threadUrl}`);
-        const result = await scrapeHeadFiThreadPage(threadUrl, browser);
+        const result = await scrapeHeadFiThreadPage(threadUrl);
+        console.log(`    → ${result.posts.length} posts extracted`);
         allPosts.push(...result.posts);
       }
 
@@ -298,7 +272,5 @@ export async function scrapeHeadFiForum(
     const msg = error instanceof Error ? error.message : "Unknown error during Head-Fi scrape";
     console.error(`  Error scraping ${target.name}:`, msg);
     return { posts: [], error: msg };
-  } finally {
-    await browser.close();
   }
 }

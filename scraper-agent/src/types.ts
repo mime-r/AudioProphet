@@ -69,8 +69,10 @@ export interface ScrapeResult {
   error?: string;
 }
 
+export type AiProvider = "openai" | "anthropic" | "lmstudio";
+
 export interface AppConfig {
-  aiProvider: "openai" | "anthropic" | "lmstudio";
+  aiProvider: AiProvider;
   aiModel?: string;
   openaiKey?: string;
   anthropicKey?: string;

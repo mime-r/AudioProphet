@@ -1,6 +1,7 @@
 import path from "node:path";
+import { readFileSync } from "node:fs";
 import dotenv from "dotenv";
-import type { AppConfig } from "./types.js";
+import type { AppConfig, ScrapeTarget } from "./types.js";
 
 dotenv.config({ path: path.resolve(import.meta.dirname, "..", ".env") });
 
@@ -30,6 +31,18 @@ export function loadConfig(): AppConfig {
     mongodbDb: process.env.MONGODB_DB || "audio-prophet",
     appUrl: process.env.APP_URL || "http://localhost:3000",
     port: Number(process.env.PORT) || 4000,
-    enableWebSearchEnrichment: process.env.ENABLE_WEB_SEARCH_ENRICHMENT === "true",
+    enableWebSearchEnrichment: process.env.ENRICH_WEB_SEARCH_ENRICHMENT === "true" || process.env.ENABLE_WEB_SEARCH_ENRICHMENT === "true",
   };
+}
+
+export function loadTargets(): ScrapeTarget[] {
+  try {
+    const targetsPath = path.resolve(import.meta.dirname, "..", "config", "targets.json");
+    const raw = readFileSync(targetsPath, "utf-8");
+    const targets: ScrapeTarget[] = JSON.parse(raw);
+    return targets;
+  } catch (error) {
+    console.warn("Failed to load targets.json:", error instanceof Error ? error.message : error);
+    return [];
+  }
 }

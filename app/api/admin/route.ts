@@ -66,12 +66,16 @@ export async function PATCH(request: Request) {
     }
     if (msrp !== undefined) {
       const msrpString = String(msrp).trim();
-      if (msrpString && !/^\d+$/.test(msrpString)) {
-        return NextResponse.json({ error: "MSRP must be a whole number or empty." }, { status: 400 });
+      if (msrpString) {
+        const msrpNum = parseFloat(msrpString.replace(/[^0-9.]/g, ""));
+        if (Number.isNaN(msrpNum) || msrpNum < 0) {
+          return NextResponse.json({ error: "MSRP must be a whole number or empty." }, { status: 400 });
+        }
+        changes.msrp = String(Math.round(msrpNum));
+      } else {
+        changes.msrp = undefined;
       }
-      changes.msrp = msrpString || undefined;
     }
-    if (msrp) changes.msrp = String(msrp).trim();
     if (source) changes.source = String(source).trim();
     if (description !== undefined) {
       const descriptionString = String(description).trim();

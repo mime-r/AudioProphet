@@ -42,16 +42,26 @@ export async function addProduct(product: ScrapedProduct): Promise<ScrapedProduc
   return products;
 }
 
+function normalizeKey(name: string, brand: string): string {
+  return `${brand}::${name}`.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
 export async function addProducts(newProducts: ScrapedProduct[]): Promise<ScrapedProduct[]> {
   const products = await loadProducts();
   const existingIds = new Set(products.map((p) => p.id));
+  const existingKeys = new Set(products.map((p) => normalizeKey(p.name, p.brand)));
+  let added = 0;
   for (const p of newProducts) {
-    if (!existingIds.has(p.id)) {
+    const key = normalizeKey(p.name, p.brand);
+    if (!existingIds.has(p.id) && !existingKeys.has(key)) {
       products.push(p);
       existingIds.add(p.id);
+      existingKeys.add(key);
+      added++;
     }
   }
   await saveProducts(products);
+  console.log(`  [storage] Saved ${added} new products (total: ${products.length})`);
   return products;
 }
 

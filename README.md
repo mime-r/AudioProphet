@@ -23,11 +23,11 @@ A community-driven CMS that aggregates, AI-extracts, and showcases upcoming (yet
 - **Product Browser** - Browse, filter (category, brand, price, date), search, and sort upcoming products with a clean dark-themed UI.
 - **Community Submissions** - Users can submit product announcements with image upload, reCAPTCHA protection, and rate limiting.
 - **Admin Panel** - Review, approve, reject, edit, and manage submissions with inline editing and bulk actions.
-- **AI-Powered Scraper** - Autonomous agent scrapes Head-Fi, Twitter/X, and audiophile brand sites, then uses AI to extract structured product data.
+- **AI-Powered Scraper** - Autonomous agent scrapes Head-Fi, Twitter/X (Untested), and audiophile brand sites, then uses AI to extract structured product data.
 
 ---
 
-![Scraper Web UI Screenshot 1](public/scraper_UI_screenshot_1.png)
+![Scraper Web UI Screenshot 1](public/scraper_UI_screenshot_2.png)
 
 ## Scraper Agent
 
@@ -49,10 +49,15 @@ The `scraper-agent/` is a standalone Node.js/TypeScript application that **autom
 ### Data Pipeline
 
 ```
-Sources ──► Scrapers ──► AI Analysis ──► Validation ──► Review UI ──► MongoDB
-(Head-Fi,    (Playwright,   (OpenAI /         (dedup,       (Express        (main app)
- Twitter/X,    Cheerio)       LM Studio)        confidence)    web app)
- web)
+Sources ──► Scrapers ──► AI Analysis ──► Validation ──► Review UI ──► Main App API ──► MongoDB
+(Head-Fi,    (Playwright,   (OpenAI /         (dedup,       (Express        (Next.js
+ Twitter/X,    Cheerio)       LM Studio)        confidence)    web app)        route)
+ web)                                                                          │
+                                                                     ┌──────────┘
+                                                                     ▼
+                                                                Direct MongoDB
+                                                                (fallback if main
+                                                                 app unreachable)
 ```
 ![Screenshot 1](public/scraper_screenshot_1.png)
 ![Screenshot 2](public/scraper_screenshot_2.png)
@@ -65,7 +70,7 @@ Sources ──► Scrapers ──► AI Analysis ──► Validation ──► 
 | **Framework** | Next.js 16 | Express |
 | **Language** | TypeScript 5 | TypeScript 5 |
 | **UI** | React 19 + Tailwind v4 | Vanilla HTML/CSS/JS |
-| **Database** | MongoDB (Mongoose) | Local JSON + MongoDB dedup |
+| **Database** | MongoDB (native driver) | Local JSON + MongoDB (direct fallback) |
 | **Scraping** | — | Playwright + Cheerio |
 | **AI** | — | OpenAI SDK (cloud or local) |
 | **Auth** | HTTP Basic + reCAPTCHA v3 | — |
@@ -89,7 +94,8 @@ npm install
 
 # Set up environment
 cp .env.local.example .env.local
-# Edit .env.local with your MongoDB URI and admin credentials
+# Edit .env.local with your MongoDB URI, admin credentials,
+# reCAPTCHA keys, and SCRAPER_API_KEY (must match scraper-agent/.env)
 
 # Run development server
 npm run dev
@@ -103,7 +109,9 @@ Open [http://localhost:3000](http://localhost:3000).
 cd scraper-agent
 npm install
 cp .env.example .env
-# Edit .env with your AI provider settings
+# Edit .env with your AI provider settings, MongoDB URI, and SCRAPER_API_KEY
+
+# Make sure SCRAPER_API_KEY matches in both scraper-agent/.env and root .env.local
 
 # Run the scraper
 npm run dev
@@ -113,6 +121,8 @@ npm run scraper dev
 ```
 
 The review UI will be available at [http://localhost:4000](http://localhost:4000).
+
+**Submitting to the main app:** When you approve a product in the review UI and click "Submit to App", the scraper-agent first tries the main app's API at `APP_URL`. If the main app isn't running, it falls back to writing directly to MongoDB (using the `MONGODB_URI` from `scraper-agent/.env`).
 
 ---
 
@@ -131,6 +141,8 @@ The review UI will be available at [http://localhost:4000](http://localhost:4000
     ├── src/
     │   ├── scrapers/    # Head-Fi, Twitter/X, Web scrapers
     │   ├── ai.ts        # OpenAI / LM Studio integration
+    │   ├── submitter.ts # Main app submission with MongoDB fallback
+    │   ├── config.ts    # Environment config loader
     │   └── enricher/    # Google image search enrichment
     └── web/             # Review UI (Express + vanilla frontend)
 ```

@@ -139,7 +139,9 @@ export async function startServer(config?: AppConfig) {
         submissionError: undefined,
       });
 
-      res.json({ success: true, message: "Product submitted successfully." });
+      const methodLabel = result.method === "mongodb" ? "via MongoDB" : "via main app";
+      console.log(`  [server] Product "${product.name}" submitted ${methodLabel}`);
+      res.json({ success: true, message: `Product submitted successfully ${methodLabel}.` });
     } catch (error) {
       res.status(500).json({ error: "Failed to submit item." });
     }
@@ -156,7 +158,7 @@ export async function startServer(config?: AppConfig) {
         {
           name: "Head-Fi",
           platform: "headfi",
-          url: "https://www.head-fi.org/forums/equipment-forums.3/,https://www.head-fi.org/forums/head-fi-meet-impressions-trade-show-reports-factory-tours.45/",
+          url: "https://www.head-fi.org/forums/equipment-forums.3/",
         },
         {
           name: "Web discovery sources",

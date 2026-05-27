@@ -20,18 +20,13 @@
     "url": "https://x.com/KiwiEars"
   },
   {
-    "name": "Headphones & IEMs Forum",
+    "name": "Head-Fi General Forum",
     "platform": "headfi",
-    "url": "https://www.head-fi.org/forums/headphones.3/"
+    "url": "https://www.head-fi.org/forums/equipment-forums.3/"
   },
   {
-    "name": "Portable Headphone Amps",
-    "platform": "headfi",
-    "url": "https://www.head-fi.org/forums/portable-headphone-amps.9/"
-  },
-  {
-    "name": "Portable Source Gear",
-    "platform": "headfi",
-    "url": "https://www.head-fi.org/forums/portable-source-gear.10/"
+    "name": "Web discovery sources",
+    "platform": "web",
+    "url": "https://www.linsoul.com/,https://hifiman.com/,https://www.moondrop.com/,https://www.truthear.com/,https://www.tinhifi.com/,https://moondroplab.com/en/home,https://kineraaudio.com/,https://www.hidizs.net/,https://store.hiby.com/,https://tipsyaudio.com/"
   }
 ]

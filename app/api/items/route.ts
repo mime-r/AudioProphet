@@ -44,42 +44,56 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Description must be 300 characters or less." }, { status: 400 });
   }
 
-  const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY;
-  if (!recaptchaSecret) {
-    return NextResponse.json({ error: "Captcha is not configured on the server." }, { status: 500 });
+  let cleanMsrp = msrp !== undefined && msrp !== null ? String(msrp).trim() : "";
+  if (cleanMsrp && cleanMsrp !== "TBA") {
+    const msrpNum = parseFloat(cleanMsrp.replace(/[^0-9.]/g, ""));
+    if (Number.isNaN(msrpNum) || msrpNum < 0) {
+      return NextResponse.json({ error: "MSRP must be a valid whole number or TBA." }, { status: 400 });
+    }
+    cleanMsrp = String(Math.round(msrpNum));
   }
 
-  const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip") ||
-    "unknown";
+  const scraperApiKey = process.env.SCRAPER_API_KEY;
+  const isScraperRequest = scraperApiKey && captchaToken === scraperApiKey;
 
-  const verifyResponse = await fetch("https://www.google.com/recaptcha/api/siteverify", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: `secret=${encodeURIComponent(recaptchaSecret)}&response=${encodeURIComponent(captchaToken)}&remoteip=${encodeURIComponent(ip)}`,
-  });
+  if (!isScraperRequest) {
+    const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY;
+    if (!recaptchaSecret) {
+      return NextResponse.json({ error: "Captcha is not configured on the server." }, { status: 500 });
+    }
 
-  if (!verifyResponse.ok) {
-    return NextResponse.json({ error: "Captcha verification service returned an error." }, { status: 500 });
+    const ip =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      request.headers.get("x-real-ip") ||
+      "unknown";
+
+    const verifyResponse = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `secret=${encodeURIComponent(recaptchaSecret)}&response=${encodeURIComponent(captchaToken)}&remoteip=${encodeURIComponent(ip)}`,
+    });
+
+    if (!verifyResponse.ok) {
+      return NextResponse.json({ error: "Captcha verification service returned an error." }, { status: 500 });
+    }
+
+    let verification;
+    try {
+      verification = await verifyResponse.json();
+    } catch {
+      return NextResponse.json({ error: "Captcha verification returned invalid response." }, { status: 500 });
+    }
+
+    if (!verification.success || (typeof verification.score === "number" && verification.score < 0.4)) {
+      return NextResponse.json({ error: "Captcha validation failed." }, { status: 400 });
+    }
+
+    if (!(await canSubmitFromIp(ip))) {
+      return NextResponse.json({ error: "Rate limit exceeded. You can submit up to 2 items every 5 minutes." }, { status: 429 });
+    }
+
+    await recordSubmissionAttempt(ip);
   }
-
-  let verification;
-  try {
-    verification = await verifyResponse.json();
-  } catch {
-    return NextResponse.json({ error: "Captcha verification returned invalid response." }, { status: 500 });
-  }
-
-  if (!verification.success || (typeof verification.score === "number" && verification.score < 0.4)) {
-    return NextResponse.json({ error: "Captcha validation failed." }, { status: 400 });
-  }
-
-  if (!(await canSubmitFromIp(ip))) {
-    return NextResponse.json({ error: "Rate limit exceeded. You can submit up to 2 items every 5 minutes." }, { status: 429 });
-  }
-
-  await recordSubmissionAttempt(ip);
 
   let safeImage: string | undefined = undefined;
   if (typeof imageDataUrl === "string" && imageDataUrl.startsWith("data:image/")) {
@@ -94,7 +108,7 @@ export async function POST(request: Request) {
     name: String(name).trim(),
     brand: String(brand).trim(),
     category,
-    msrp: String(msrp).trim(),
+    msrp: cleanMsrp,
     source: String(source).trim(),
     description: String(description || "").trim(),
     imageDataUrl: safeImage,

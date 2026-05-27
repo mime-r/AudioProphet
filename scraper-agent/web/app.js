@@ -92,9 +92,14 @@ function renderProducts(products) {
 
     const submittedClass = p.submitted ? "submitted" : "";
 
+    const imageHtml = p.imageDataUrl
+      ? `<img class="product-image" src="${p.imageDataUrl}" alt="${escHtml(p.name)}" loading="lazy" onerror="this.style.display='none'" />`
+      : `<div class="product-image-placeholder"></div>`;
+
     return `
       <div class="product-card ${submittedClass}" data-id="${p.id}">
         <div class="product-card-header">
+          ${imageHtml}
           <div class="product-card-info">
             <div class="product-category">${p.category}</div>
             <div class="product-name">${escHtml(p.brand)} ${escHtml(p.name)}</div>
@@ -201,7 +206,7 @@ async function submitProduct(id) {
     await fetchProducts();
     applyFilters();
     await fetchStats();
-    showToast("Submitted to Audio Prophet!", "success");
+    showToast(data.message || "Submitted to Audio Prophet!", "success");
   } catch {
     showToast("Failed to submit", "error");
   }

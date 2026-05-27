@@ -10,6 +10,7 @@
     "web": "node dist/server.js",
     "dev": "tsx src/index.ts",
     "dev:web": "tsx watch src/server.ts",
+    "enrich": "tsx src/enrich-existing.ts",
     "clean": "rm -rf dist"
   },
   "dependencies": {
